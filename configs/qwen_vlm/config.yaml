@@ -1,0 +1,16 @@
+# @package _global_
+
+defaults:
+  - model: qwen_vlm_7b
+  - data: fire_detection
+  - training: qwen_training
+  - paths: default_paths
+
+seed: 42
+device: "cuda"
+
+wandb:
+  project: "fire-detection-qwen"
+  entity: null  # Set your wandb entity/username
+  name: "qwen-vlm-fire-detection"
+  tags: ["qwen-vlm", "fire-detection", "vision-language"]

@@ -1,0 +1,6 @@
+# Paths Configuration
+checkpoint_dir: "checkpoints/qwen_vlm"
+log_dir: "logs/qwen_vlm"
+result_dir: "results/qwen_vlm"
+output_dir: "outputs/qwen_vlm"
+

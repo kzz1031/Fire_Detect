@@ -1,0 +1,34 @@
+# Qwen VLM Training Configuration
+epochs: 10
+learning_rate: 5.0e-5
+weight_decay: 0.0001
+optimizer: "adamw"
+scheduler: "linear"
+
+# Learning rate schedule
+warmup_steps: 500
+warmup_ratio: 0.1
+
+# Training settings
+gradient_accumulation_steps: 4
+max_grad_norm: 1.0
+mixed_precision: true  # Use fp16
+fp16: true
+
+# Evaluation
+eval_steps: 500
+save_steps: 1000
+save_total_limit: 3
+logging_steps: 50
+
+# Early stopping
+early_stopping:
+  enabled: true
+  patience: 3
+  min_delta: 0.001
+
+# Checkpointing
+save_best_model: true
+metric_for_best_model: "accuracy"
+greater_is_better: true
+

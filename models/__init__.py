@@ -1,0 +1,4 @@
+"""
+Fire Detection Models
+"""
+

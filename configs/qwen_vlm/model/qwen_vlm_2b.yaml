@@ -1,0 +1,20 @@
+# Qwen VLM 2B Model Configuration (smaller, faster)
+model_name: "Qwen/Qwen2-VL-2B-Instruct"
+num_classes: 3
+max_length: 512
+image_size: 448
+freeze_vision_encoder: false
+freeze_language_model: false
+
+# Classification head
+hidden_size: 1024
+dropout: 0.1
+
+# PEFT (Parameter-Efficient Fine-Tuning) settings
+use_peft: true
+peft_type: "lora"
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.1
+target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+

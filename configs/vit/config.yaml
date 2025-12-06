@@ -1,0 +1,30 @@
+# ViT Model Configuration
+model:
+  name: "vit_base_patch16_224"
+  num_classes: 3
+  pretrained: true
+  image_size: 224
+
+data:
+  root_dir: "../data"
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+  batch_size: 32
+  num_workers: 4
+  augmentation: true
+
+training:
+  epochs: 50
+  learning_rate: 1e-4
+  weight_decay: 1e-4
+  optimizer: "adamw"
+  scheduler: "cosine"
+  warmup_epochs: 5
+  save_interval: 5
+
+paths:
+  checkpoint_dir: "../checkpoints/vit"
+  log_dir: "../logs/vit"
+  result_dir: "../results/vit"
+
