@@ -15,7 +15,7 @@ This project aims to classify images into three fire-related categories:
 #### 2.1 Model Architecture
 
 We implemented a Vision Transformer from scratch for fire detection. The model follows the standard ViT architecture:
-
+![](pic/vit.png)
 **Key Components:**
 - **Patch Embedding**: Divides input images (224×224) into 16×16 patches and projects them into embedding space
 - **CLS Token**: A learnable classification token prepended to the patch sequence
@@ -52,15 +52,108 @@ We conducted several experiments with different hyperparameters:
 - `fire` category remains challenging with lower precision (26.1% - 38.2%)
 - `no_fire` category has high precision (88.6% - 98.8%) but moderate recall (59.5% - 68.3%)
 
-The model demonstrates reasonable performance on smoke detection (`start_fire`) but struggles with distinguishing actual flames from smoke, similar to the challenges observed in the Qwen2-VL experiments.
+The model demonstrates reasonable performance on smoke detection (`start_fire`) but struggles with distinguishing actual flames from smoke, similar to the challenges observed in other experiments.
 
-### 3. Qwen2-VL-7B Pretrained Model Experiments
+### 3. Swin Transformer Approach
 
-#### 3.1 Overview
+#### 3.1 Model Architecture
+
+We implemented a Swin Transformer (Shifted Window Transformer) for fire detection. Unlike ViT which uses global self-attention, Swin Transformer employs a hierarchical architecture with shifted window-based self-attention, making it more efficient and better suited for vision tasks.
+
+**Key Components:**
+
+1. **Patch Embedding**: Converts input images (224×224) into non-overlapping patches (4×4) and projects them into embedding space using a convolutional layer.
+
+2. **Hierarchical Architecture**: The model consists of 4 stages, each with different resolutions:
+   - Stage 1: 56×56 patches (after 4×4 patch embedding)
+   - Stage 2: 28×28 patches (after first patch merging)
+   - Stage 3: 14×14 patches (after second patch merging)
+   - Stage 4: 7×7 patches (after third patch merging)
+
+3. **Swin Transformer Blocks**: Each stage contains multiple Swin Transformer blocks with:
+   - **Window-based Multi-head Self-Attention (W-MSA)**: Computes attention within fixed-size windows (7×7), reducing computational complexity from O(n²) to O(n) where n is the number of patches
+   - **Shifted Window-based Multi-head Self-Attention (SW-MSA)**: Alternates with W-MSA, using shifted windows to enable cross-window connections while maintaining efficiency
+   - **Relative Position Bias**: Adds learnable relative position encodings within windows, capturing spatial relationships more effectively than absolute position encodings
+   - **MLP**: Two-layer feed-forward network with GELU activation
+   - **Layer Normalization and Residual Connections**: Applied before attention and MLP layers
+
+4. **Patch Merging**: Downsampling layers between stages that merge 2×2 neighboring patches, doubling the channel dimension while halving spatial resolution.
+
+5. **Classification Head**: Global average pooling followed by a linear layer mapping to class logits.
+
+**Model Variants:**
+- `swin_tiny`: embed_dim=96, depths=[2,2,6,2], num_heads=[3,6,12,24]
+- `swin_small`: embed_dim=96, depths=[2,2,18,2], num_heads=[3,6,12,24]
+- `swin_base`: embed_dim=128, depths=[2,2,18,2], num_heads=[4,8,16,32]
+
+**Advantages over ViT:**
+- **Linear computational complexity**: Window-based attention scales linearly with image size, making it more efficient for high-resolution images
+- **Hierarchical feature representation**: Multi-scale features capture both local and global patterns
+- **Better inductive bias**: The shifted window mechanism and hierarchical structure provide stronger spatial locality priors
+
+The implementation follows the principle of "good taste" - eliminating unnecessary complexity while maintaining the core architectural innovations that make Swin Transformer effective.
+
+#### 3.2 Experimental Results
+
+We conducted extensive experiments with different model sizes, hyperparameters, and training strategies:
+
+**Model Size Comparison:**
+
+| Configuration | Accuracy | Precision | Recall | F1 | No_fire F1 | Start_fire F1 | Fire F1 |
+|---------------|----------|-----------|--------|----|-----------|---------------|---------|
+| swin_tiny | 71.7% | 65.7% | 73.7% | 64.7% | 74.8% | 80.4% | 38.8% |
+| swin_small | 73.0% | 66.8% | 77.5% | 67.2% | 74.9% | 80.7% | 46.2% |
+| swin_base | 69.0% | 65.2% | 74.2% | 63.2% | 74.0% | 77.6% | 38.0% |
+
+**Learning Rate Experiments:**
+
+| Configuration | Accuracy | Precision | Recall | F1 | No_fire F1 | Start_fire F1 | Fire F1 |
+|---------------|----------|-----------|--------|----|-----------|---------------|---------|
+| swin_lr_1e-4 | 71.2% | 65.2% | 73.4% | 64.6% | 74.1% | 78.3% | 41.3% |
+| swin_lr_2e-4 | 74.3% | 67.7% | 78.3% | 68.3% | 77.0% | 81.1% | 46.9% |
+| swin_lr_5e-5 | 72.6% | 66.5% | 74.4% | 65.4% | 75.0% | 83.9% | 37.1% |
+
+**Batch Size Experiments:**
+
+| Configuration | Accuracy | Precision | Recall | F1 | No_fire F1 | Start_fire F1 | Fire F1 |
+|---------------|----------|-----------|--------|----|-----------|---------------|---------|
+| swin_bs32 | 73.9% | 67.8% | 76.9% | 67.0% | 76.0% | 84.6% | 40.6% |
+| swin_bs64 | 72.6% | 67.6% | 76.3% | 65.8% | 74.3% | 84.3% | 38.9% |
+| swin_bs128 | 73.0% | 66.1% | 73.3% | 65.5% | 75.7% | 80.2% | 40.7% |
+
+**Regularization Experiments:**
+
+| Configuration | Accuracy | Precision | Recall | F1 | No_fire F1 | Start_fire F1 | Fire F1 |
+|---------------|----------|-----------|--------|----|-----------|---------------|---------|
+| swin_dropout_0.0 | 71.7% | 65.8% | 73.6% | 64.6% | 75.7% | 79.8% | 38.2% |
+| swin_dropout_0.1 | 72.6% | 65.8% | 73.1% | 64.9% | 74.8% | 82.4% | 37.5% |
+| swin_dropout_0.2 | 71.2% | 66.5% | 75.0% | 64.7% | 74.3% | 80.9% | 38.9% |
+
+**Loss Function Experiments:**
+
+| Configuration | Accuracy | Precision | Recall | F1 | No_fire F1 | Start_fire F1 | Fire F1 |
+|---------------|----------|-----------|--------|----|-----------|---------------|---------|
+| swin_focal_loss | 72.6% | 66.9% | 76.0% | 65.9% | 74.8% | 83.0% | 40.0% |
+| swin_class_weight | 71.7% | 66.7% | 75.6% | 65.2% | 73.6% | 81.3% | 40.6% |
+
+**Key Observations:**
+- Best performance achieved with learning rate 2e-4 (74.3% accuracy, 68.3% F1)
+- `swin_small` shows better performance than `swin_tiny` and `swin_base`, suggesting optimal model capacity for this task
+- Batch size 32 achieves the best balance (73.9% accuracy, 67.0% F1)
+- `start_fire` category shows excellent performance across all configurations (F1: 77.6% - 84.6%), significantly better than ViT
+- `fire` category remains challenging (F1: 37.1% - 46.9%), but `swin_lr_2e-4` achieves the best fire detection (46.9% F1)
+- Dropout has minimal impact on performance, suggesting the model is not overfitting significantly
+- Focal loss and class weighting show similar performance, with focal loss slightly better for `start_fire` detection
+
+The hierarchical architecture and window-based attention mechanism of Swin Transformer prove particularly effective for detecting smoke (`start_fire`), capturing multi-scale features that help distinguish early-stage fire indicators.
+
+### 4. Qwen2-VL-7B Pretrained Model Experiments
+
+#### 4.1 Overview
 
 We also experimented with the Qwen2-VL-7B pretrained vision-language model using zero-shot classification through prompt engineering. This approach leverages the model's pre-trained understanding of visual concepts without fine-tuning.
 
-#### 3.2 Prompt Engineering Optimization Process
+#### 4.2 Prompt Engineering Optimization Process
 
 **Initial Version (before_PE)**
 Simple prompt used:
@@ -110,7 +203,7 @@ Simultaneously optimized post-processing logic to prevent `start_fire` from bein
 - Overall accuracy improved to 85.8%
 - `fire` category precision improved from 30.2% to 41.0%
 
-#### 3.3 Qwen2-VL Experimental Results Comparison
+#### 4.3 Qwen2-VL Experimental Results Comparison
 
 | Version | Accuracy | Fire Precision | Fire Recall | Start_fire Recall | No_fire Recall |
 |---------|----------|----------------|-------------|-------------------|---------------|
