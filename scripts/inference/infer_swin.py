@@ -1,7 +1,3 @@
-"""
-Swin Transformer推理脚本
-简洁实用，直接加载checkpoint在测试集上运行
-"""
 import os
 import sys
 import yaml
