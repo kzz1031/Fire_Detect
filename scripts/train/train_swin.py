@@ -28,7 +28,7 @@ except ImportError:
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from models.vit import build_vit
+from models.swin import build_swin
 from utils.data_loader import create_data_loaders
 from utils.metrics import calculate_metrics
 
@@ -277,7 +277,7 @@ def save_checkpoint(
 def main():
     """主训练函数"""
     # 加载配置
-    config_path = project_root / 'configs' / 'vit' / 'config.yaml'
+    config_path = project_root / 'configs' / 'swin' / 'config.yaml'
     config = load_config(str(config_path))
     
     # 设置设备
@@ -387,13 +387,13 @@ def main():
     )
     
     # 创建模型
-    model = build_vit(
+    model = build_swin(
         model_name=config['model']['name'],
         num_classes=int(config['model']['num_classes']),
         img_size=int(config['model']['image_size']),
         pretrained=bool(config['model'].get('pretrained', False)),
-        dropout=float(config['model'].get('dropout', 0.0)),
-        drop_path=float(config['model'].get('drop_path', 0.0)),
+        drop_rate=float(config['model'].get('drop_rate', 0.0)),
+        drop_path_rate=float(config['model'].get('drop_path_rate', 0.1)),
     )
     model = model.to(device)
     
@@ -520,3 +520,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
