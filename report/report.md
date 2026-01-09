@@ -216,3 +216,10 @@ Simultaneously optimized post-processing logic to prevent `start_fire` from bein
 - The critical distinction between `start_fire` (smoke only) and `fire` (visible flames) required explicit emphasis in the prompt
 - Post-processing logic was essential to prevent misclassification
 - Despite improvements, `fire` category precision remains relatively low (41.0%), indicating confusion between smoke and flames
+
+### Final Ranking
+
+No. 41
+
+<img width="1950" height="2224" alt="image" src="https://github.com/user-attachments/assets/b756a864-723d-4cb0-bc4a-29a01d978f8d" />
+
